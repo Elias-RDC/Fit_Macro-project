@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(FitMacroApp());
+  runApp(const FitMacroApp());
 }
 
 class FitMacroApp extends StatelessWidget {
+  const FitMacroApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -13,12 +15,14 @@ class FitMacroApp extends StatelessWidget {
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
       ),
-      home: SobrePage(),
+      home: const TelaSobre(),
     );
   }
 }
 
-class SobrePage extends StatelessWidget {
+class TelaSobre extends StatelessWidget {
+  const TelaSobre({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,20 +34,7 @@ class SobrePage extends StatelessWidget {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Icon(Icons.menu),
-                SizedBox(width: 10),
-                Text(
-                  'FitMacro',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            Text(
+            const Text(
               'Bem-vindo, Pedro',
               style: TextStyle(fontSize: 16),
             ),
@@ -57,11 +48,15 @@ class SobrePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 // LOGO
-                Image.asset('assets/images/logo_sem_fundo.png', height: 120,),
+                Image.asset(
+                  'assets/images/logo_sem_fundo.png',
+                  height: 120,
+                ),
+                const SizedBox(height: 20),
                 // TÍTULO
-                Text(
+                const Text(
                   'Sobre o FitMacro',
                   style: TextStyle(
                     fontSize: 24,
@@ -69,11 +64,9 @@ class SobrePage extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-
-                SizedBox(height: 20),
-                
+                const SizedBox(height: 20),
                 // SUBTÍTULO
-                Text(
+                const Text(
                   'Informações do app',
                   style: TextStyle(
                     fontSize: 18,
@@ -81,49 +74,52 @@ class SobrePage extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-
-                SizedBox(height: 15),
-                
+                const SizedBox(height: 15),
                 // DESCRIÇÃO
-                Text(
+                const Text(
                   'O FitMacro é um aplicativo projetado para auxiliar no acompanhamento nutricional e na contagem de macronutrientes.',
-                  style: TextStyle(fontSize: 16, height: 1.5, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 16,
+                    height: 1.5,
+                    color: Colors.grey,
+                  ),
                   textAlign: TextAlign.center,
                 ),
-
-                SizedBox(height: 30),
-                
+                const SizedBox(height: 30),
                 // VERSÃO
-                Text(
+                const Text(
                   'Versão',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
                 ),
-                Text(
+                const Text(
                   '1.0.0',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
                 ),
-
-                SizedBox(height: 30),
-
+                const SizedBox(height: 30),
                 // CRÉDITOS
-                Text(
+                const Text(
                   'Créditos',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
                 ),
-                SizedBox(height: 5),
-                Text(
+                const SizedBox(height: 5),
+                const Text(
                   'Elias Rozal de Carvalho\nRodrigo Guilherme Braga Kamiguchi',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
                   textAlign: TextAlign.center,
                 ),
-
-                SizedBox(height: 40),
+                const SizedBox(height: 40),
               ],
             ),
           ),
