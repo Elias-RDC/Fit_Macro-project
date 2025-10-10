@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dashboard_screen.dart';
+import 'login.dart';
 
 void main() {
   runApp(const FitMacroApp());
@@ -14,7 +14,7 @@ class FitMacroApp extends StatelessWidget {
       title: 'FitMacro',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.red),
-      home: const DashboardScreen(),
+      home: const LoginPage(), // Tela de login sendo chamaada aqui...
     );
   }
 }
