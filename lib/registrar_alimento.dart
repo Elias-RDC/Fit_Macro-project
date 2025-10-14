@@ -143,7 +143,7 @@ class _AdicionarRefeicaoPageState extends State<AdicionarRefeicaoPage> {
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(18.0),
         child: alimentos.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : Column(
@@ -186,10 +186,11 @@ class _AdicionarRefeicaoPageState extends State<AdicionarRefeicaoPage> {
                       ),
                     ),
                     onPressed: adicionarAlimento,
-                    icon: const Icon(Icons.add),
+                    icon: const Icon(Icons.add, color:Colors.black),
                     label: const Text(
                       'Adicionar Alimento',
                       style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                      
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -230,7 +231,7 @@ class _AdicionarRefeicaoPageState extends State<AdicionarRefeicaoPage> {
                     ),
                     onPressed: calcularTotais,
                     child: const Text(
-                      'Adicionar Refeição',
+                      'Salvar Refeição',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
                     ),
                   ),
