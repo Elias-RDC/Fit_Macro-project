@@ -1,129 +1,253 @@
-import 'package:fit_macro/sobre.dart';
 import 'package:flutter/material.dart';
+import 'package:percent_indicator/circular_percent_indicator.dart';
+import 'package:fit_macro/sobre.dart';
 import 'pesos_e_medidas.dart';
 import 'registrar_alimento.dart';
 import 'imc.dart';
 import 'configuracoes.dart';
 import 'suporte.dart';
 
-class DashboardScreen extends StatelessWidget {
+// Modelo de dados de nutrientes
+class NutrientData {
+  final double calorias;
+  final double metaCalorias;
+  final double proteina;
+  final double metaProteina;
+  final double carboidrato;
+  final double metaCarboidrato;
+  final double gordura;
+  final double metaGordura;
+
+  NutrientData({
+    required this.calorias,
+    required this.metaCalorias,
+    required this.proteina,
+    required this.metaProteina,
+    required this.carboidrato,
+    required this.metaCarboidrato,
+    required this.gordura,
+    required this.metaGordura,
+  });
+}
+
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
-  Widget _buildCard(String title, String value, IconData icon, Color color) {
-    return Expanded(
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 4,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: color, size: 36),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                value,
-                style: const TextStyle(fontSize: 16, color: Colors.black87, fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  NutrientData? data;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: const [Text('Bem-vindo, Pedro')],
-        ),
-        backgroundColor: Colors.red,
-      ),
-      drawer: const AppDrawer(),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+  void initState() {
+    super.initState();
+    loadDashboardData();
+  }
+
+  Future<void> loadDashboardData() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    setState(() {
+      data = NutrientData(
+        calorias: 2800,
+        metaCalorias: 3700,
+        proteina: 160,
+        metaProteina: 180,
+        carboidrato: 320,
+        metaCarboidrato: 400,
+        gordura: 70,
+        metaGordura: 100,
+      );
+    });
+  }
+
+  // Widget de barra linear de macronutriente
+  Widget _buildLinearCard(String title, double current, double goal,
+      Color color, IconData icon, String unit) {
+    final progress = (current / goal).clamp(0.0, 1.0);
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(10),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Visão Geral', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold,)),
-            ),
-            const SizedBox(height: 16),
             Row(
               children: [
-                _buildCard('Proteínas', '70 g', Icons.fitness_center, Colors.red),
-                const SizedBox(width: 10),
-                _buildCard('Carboidratos', '200 g', Icons.bakery_dining, Colors.red),
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: color.withOpacity(0.1),
+                  child: Icon(icon, color: color, size: 18),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                ),
+                Text(
+                  "${current.toStringAsFixed(0)} / ${goal.toStringAsFixed(0)} $unit",
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 12),
+                ),
               ],
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                _buildCard('Gorduras', '50 g', Icons.opacity, Colors.red),
-                const SizedBox(width: 10),
-                _buildCard('Energia', '1.500 kcal', Icons.flash_on, Colors.red),
-              ],
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => AdicionarRefeicaoPage()),
-                );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text(
-                  'Adicionar Refeição',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
-                ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 6,
+                color: color,
+                backgroundColor: Colors.white,
               ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(context,
-                  MaterialPageRoute(builder: (_) =>  CalculadoraIMCPage()),
-              );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text(
-                  'Calcular IMC',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
-                ),
-              ),
-            ),
-            const Spacer(),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Image.asset('assets/images/logo_sem_fundo.png', height: 60),
             ),
           ],
         ),
       ),
     );
   }
+
+  // Widget para botões menores com personalização de cores
+  Widget _smallButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color backgroundColor = Colors.red,
+    Color textColor = Colors.white,
+  }) {
+    return ElevatedButton.icon(
+      icon: Icon(icon, size: 20, color: textColor),
+      label: Text(
+        label,
+        style: TextStyle(
+            fontSize: 14, fontWeight: FontWeight.bold, color: textColor),
+      ),
+      onPressed: onTap,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: backgroundColor,
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        minimumSize: const Size.fromHeight(40),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final d = data;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('FitMacro'),
+        backgroundColor: Colors.red,
+      ),
+      drawer: const AppDrawer(),
+      body: d == null
+          ? const Center(child: CircularProgressIndicator(color: Colors.red))
+          : RefreshIndicator(
+              onRefresh: loadDashboardData,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Progresso de Calorias',
+                      style: TextStyle(
+                          fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+
+                    CircularPercentIndicator(
+                      radius: 70.0,
+                      lineWidth: 10.0,
+                      percent: (d.calorias / d.metaCalorias).clamp(0.0, 1.0),
+                      center: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "${((d.calorias / d.metaCalorias) * 100).toStringAsFixed(0)}%",
+                            style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "${d.calorias.toStringAsFixed(0)} / ${d.metaCalorias.toStringAsFixed(0)} kcal",
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.black54),
+                          ),
+                        ],
+                      ),
+                      progressColor: Colors.red,
+                      backgroundColor: Colors.grey.shade200,
+                      circularStrokeCap: CircularStrokeCap.round,
+                      animation: true,
+                    ),
+
+                    const SizedBox(height: 20),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Macronutrientes',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    _buildLinearCard("Proteínas", d.proteina, d.metaProteina,
+                        Colors.red, Icons.fitness_center, "g"),
+                    _buildLinearCard("Carboidratos", d.carboidrato,
+                        d.metaCarboidrato, Colors.red, Icons.local_dining, "g"),
+                    _buildLinearCard("Gorduras", d.gordura, d.metaGordura,
+                        Colors.red, Icons.water_drop, "g"),
+
+                    const SizedBox(height: 20),
+                    _smallButton(
+                      icon: Icons.add,
+                      label: 'Adicionar Refeição',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => AdicionarRefeicaoPage()),
+                        );
+                      },
+                      backgroundColor: Colors.red,
+                      textColor: Colors.black, // texto e ícone preto
+                    ),
+                    const SizedBox(height: 8),
+                    _smallButton(
+                      icon: Icons.monitor_weight,
+                      label: 'Calcular IMC',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const CalculadoraIMCPage()),
+                        );
+                      },
+                      backgroundColor: Colors.red,
+                      textColor: Colors.black, // texto e ícone preto
+                    ),
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
 }
 
+// Menu lateral
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
@@ -135,7 +259,13 @@ class AppDrawer extends StatelessWidget {
         children: [
           const DrawerHeader(
             decoration: BoxDecoration(color: Colors.red),
-            child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+            child: Text(
+              'Menu',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold),
+            ),
           ),
           ListTile(
             leading: const Icon(Icons.home),
@@ -147,7 +277,8 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Registro de Refeições'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) =>  AdicionarRefeicaoPage()));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => AdicionarRefeicaoPage()));
             },
           ),
           ListTile(
@@ -155,7 +286,8 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Peso e Medidas'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const PesoMedidasPage()));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const PesoMedidasPage()));
             },
           ),
           ListTile(
@@ -166,19 +298,19 @@ class AppDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => ConfiguracoesPage(onThemeChanged: (isDark) {
-                    // Aqui acontece a função para mudar o tema...
-                  }),
+                  builder: (_) =>
+                      ConfiguracoesPage(onThemeChanged: (isDark) {}),
                 ),
               );
             },
           ),
           ListTile(
-            leading: const Icon(Icons.logout),
+            leading: const Icon(Icons.help_outline),
             title: const Text('Suporte / Ajuda'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const AjudaSuporteScreen()));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const AjudaSuporteScreen()));
             },
           ),
           ListTile(
@@ -186,7 +318,8 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Sobre o FitMacro'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const TelaSobre()));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const TelaSobre()));
             },
           ),
         ],
