@@ -6,8 +6,8 @@ import 'registrar_alimento.dart';
 import 'imc.dart';
 import 'configuracoes.dart';
 import 'suporte.dart';
+import 'database_helper.dart';
 
-// Modelo de dados de nutrientes
 class NutrientData {
   final double calorias;
   final double metaCalorias;
@@ -44,25 +44,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     loadDashboardData();
+    // Atualiza automaticamente quando o banco for alterado
+    DatabaseHelper.instance.updates.listen((_) => loadDashboardData());
   }
 
   Future<void> loadDashboardData() async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    final db = DatabaseHelper.instance;
+    final soma = await db.getSomaTotalAlimentos();
+    final meta = await db.getLastMeta();
+
+    if (meta == null) {
+      setState(() {
+        data = NutrientData(
+          calorias: soma['calorias'] ?? 0,
+          metaCalorias: 2000,
+          proteina: soma['proteinas'] ?? 0,
+          metaProteina: 150,
+          carboidrato: soma['carboidratos'] ?? 0,
+          metaCarboidrato: 250,
+          gordura: soma['gorduras'] ?? 0,
+          metaGordura: 70,
+        );
+      });
+      return;
+    }
+
     setState(() {
       data = NutrientData(
-        calorias: 2800,
-        metaCalorias: 3700,
-        proteina: 160,
-        metaProteina: 180,
-        carboidrato: 320,
-        metaCarboidrato: 400,
-        gordura: 70,
-        metaGordura: 100,
+        calorias: soma['calorias'] ?? 0,
+        metaCalorias: meta.calorias.toDouble(),
+        proteina: soma['proteinas'] ?? 0,
+        metaProteina: meta.proteinas.toDouble(),
+        carboidrato: soma['carboidratos'] ?? 0,
+        metaCarboidrato: meta.carboidratos.toDouble(),
+        gordura: soma['gorduras'] ?? 0,
+        metaGordura: meta.gorduras.toDouble(),
       );
     });
   }
 
-  // Widget de barra linear de macronutriente
   Widget _buildLinearCard(String title, double current, double goal,
       Color color, IconData icon, String unit) {
     final progress = (current / goal).clamp(0.0, 1.0);
@@ -113,7 +133,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Widget para botões menores com personalização de cores
   Widget _smallButton({
     required IconData icon,
     required String label,
@@ -160,8 +179,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     const Text(
                       'Progresso de Calorias',
-                      style: TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
 
@@ -223,7 +242,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         );
                       },
                       backgroundColor: Colors.red,
-                      textColor: Colors.black, // texto e ícone preto
+                      textColor: Colors.black,
                     ),
                     const SizedBox(height: 8),
                     _smallButton(
@@ -232,12 +251,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                              builder: (_) => const CalculadoraIMCPage()),
+                          MaterialPageRoute(builder: (_) => CalculadoraIMCPage()),
                         );
                       },
                       backgroundColor: Colors.red,
-                      textColor: Colors.black, // texto e ícone preto
+                      textColor: Colors.black,
                     ),
                   ],
                 ),
@@ -247,7 +265,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-// Menu lateral
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
@@ -287,7 +304,16 @@ class AppDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const PesoMedidasPage()));
+                  MaterialPageRoute(builder: (_) => PesoMedidasPage()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.fitness_center),
+            title: const Text('Calcular IMC'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => CalculadoraIMCPage()));
             },
           ),
           ListTile(
@@ -299,7 +325,7 @@ class AppDrawer extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) =>
-                      ConfiguracoesPage(onThemeChanged: (isDark) {}),
+                      ConfiguracoesPage(onThemeChanged: (bool _) {}),
                 ),
               );
             },
@@ -310,7 +336,7 @@ class AppDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const AjudaSuporteScreen()));
+                  MaterialPageRoute(builder: (_) => AjudaSuporteScreen()));
             },
           ),
           ListTile(
@@ -319,7 +345,7 @@ class AppDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const TelaSobre()));
+                  MaterialPageRoute(builder: (_) => TelaSobre()));
             },
           ),
         ],

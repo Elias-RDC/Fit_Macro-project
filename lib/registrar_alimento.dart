@@ -1,15 +1,17 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:intl/intl.dart';
+import 'database_helper.dart'; // Certifique-se de ajustar o caminho conforme a sua estrutura
 
-class Alimento {
+class AlimentoItem {
   final String nome;
   final double proteina;
   final double carboidrato;
   final double gordura;
   final double kcal;
 
-  Alimento({
+  AlimentoItem({
     required this.nome,
     required this.proteina,
     required this.carboidrato,
@@ -17,8 +19,8 @@ class Alimento {
     required this.kcal,
   });
 
-  factory Alimento.fromJson(Map<String, dynamic> json) {
-    return Alimento(
+  factory AlimentoItem.fromJson(Map<String, dynamic> json) {
+    return AlimentoItem(
       nome: json['nome'],
       proteina: (json['proteina'] as num).toDouble(),
       carboidrato: (json['carboidrato'] as num).toDouble(),
@@ -36,12 +38,12 @@ class AdicionarRefeicaoPage extends StatefulWidget {
 }
 
 class _AdicionarRefeicaoPageState extends State<AdicionarRefeicaoPage> {
-  List<Alimento> alimentos = [];
-  Alimento? alimentoSelecionado;
+  List<AlimentoItem> alimentos = [];
+  AlimentoItem? alimentoSelecionado;
   final TextEditingController quantidadeController = TextEditingController();
 
-  // Lista de alimentos adicionados
   List<Map<String, dynamic>> refeicao = [];
+  final dbHelper = DatabaseHelper.instance;
 
   @override
   void initState() {
@@ -53,7 +55,7 @@ class _AdicionarRefeicaoPageState extends State<AdicionarRefeicaoPage> {
     final String response = await rootBundle.loadString('assets/data/alimentos.json');
     final List<dynamic> data = json.decode(response);
     setState(() {
-      alimentos = data.map((item) => Alimento.fromJson(item)).toList();
+      alimentos = data.map((item) => AlimentoItem.fromJson(item)).toList();
     });
   }
 
@@ -92,6 +94,43 @@ class _AdicionarRefeicaoPageState extends State<AdicionarRefeicaoPage> {
     });
   }
 
+  Future<void> salvarRefeicao() async {
+    if (refeicao.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Adicione pelo menos um alimento antes de salvar')),
+      );
+      return;
+    }
+
+    final String dataHoje = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+    for (var item in refeicao) {
+      final alimento = Alimento(
+        nome: item['nome'],
+        calorias: item['kcal'],
+        proteinas: item['proteina'],
+        carboidratos: item['carboidrato'],
+        gorduras: item['gordura'],
+        data: dataHoje,
+      );
+      await dbHelper.insertAlimento(alimento);
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Refeição salva com sucesso!')),
+    );
+
+    setState(() {
+      refeicao.clear();
+    });
+  }
+
+  void removerAlimento(int index) {
+    setState(() {
+      refeicao.removeAt(index);
+    });
+  }
+
   void calcularTotais() {
     double proteinaTotal = 0;
     double carboidratoTotal = 0;
@@ -127,12 +166,6 @@ class _AdicionarRefeicaoPageState extends State<AdicionarRefeicaoPage> {
     );
   }
 
-  void removerAlimento(int index) {
-    setState(() {
-      refeicao.removeAt(index);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -148,11 +181,11 @@ class _AdicionarRefeicaoPageState extends State<AdicionarRefeicaoPage> {
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
-                  DropdownButton<Alimento>(
+                  DropdownButton<AlimentoItem>(
                     isExpanded: true,
                     hint: const Text('Selecione um alimento'),
                     value: alimentoSelecionado,
-                    onChanged: (Alimento? novoAlimento) {
+                    onChanged: (AlimentoItem? novoAlimento) {
                       setState(() {
                         alimentoSelecionado = novoAlimento;
                       });
@@ -186,11 +219,10 @@ class _AdicionarRefeicaoPageState extends State<AdicionarRefeicaoPage> {
                       ),
                     ),
                     onPressed: adicionarAlimento,
-                    icon: const Icon(Icons.add, color:Colors.black),
+                    icon: const Icon(Icons.add, color: Colors.black),
                     label: const Text(
                       'Adicionar Alimento',
                       style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                      
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -229,7 +261,7 @@ class _AdicionarRefeicaoPageState extends State<AdicionarRefeicaoPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed: calcularTotais,
+                    onPressed: salvarRefeicao,
                     child: const Text(
                       'Salvar Refeição',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
