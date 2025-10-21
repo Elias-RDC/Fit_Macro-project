@@ -90,7 +90,7 @@ class _LoginPageState extends State<LoginPage>
                           child: const Icon(
                             Icons.fitness_center,
                             size: 60,
-                            color: Colors.white,
+                            color: const Color(0xFFB22222),
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -105,7 +105,7 @@ class _LoginPageState extends State<LoginPage>
                         Text(
                           'Saúde e boa forma',
                           style: GoogleFonts.openSans(
-                            color: Colors.white70,
+                            color: Colors.red,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -135,11 +135,10 @@ class _LoginPageState extends State<LoginPage>
                       ),
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: const Color(0xFFB22222),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(22),
                           ),
                         ),
                         onPressed: () {
