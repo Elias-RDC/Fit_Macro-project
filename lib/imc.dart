@@ -26,7 +26,7 @@ class _CalculadoraIMCPageState extends State<CalculadoraIMCPage> {
         title: const Text('Aviso Importante ⚠️'),
         content: const Text(
           'O cálculo de IMC é uma estimativa genérica e não leva em conta fatores como massa magra, gordura corporal, idade ou nível de atividade física. '
-          'Use-o apenas como referência e procure um profissional de saúde para uma avaliação mais precisa.',
+              'Use-o apenas como referência e procure um profissional de saúde para uma avaliação mais precisa.',
           style: TextStyle(fontSize: 15, color: Colors.black87),
         ),
         actions: [
@@ -79,7 +79,7 @@ class _CalculadoraIMCPageState extends State<CalculadoraIMCPage> {
         title: const Text("Cálculo de IMC"),
         centerTitle: true,
         backgroundColor: Colors.red,
-        foregroundColor: Colors.white,
+        foregroundColor: Colors.black,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -127,7 +127,7 @@ class _CalculadoraIMCPageState extends State<CalculadoraIMCPage> {
                   onPressed: _calcularIMC,
                   child: const Text(
                     "Calcular IMC",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
                   ),
                 ),
                 const SizedBox(height: 30),
