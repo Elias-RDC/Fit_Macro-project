@@ -1,12 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:fit_macro/sobre.dart';
 import 'pesos_e_medidas.dart';
-import 'registrar_alimento.dart';
 import 'imc.dart';
 import 'configuracoes.dart';
 import 'suporte.dart';
 import 'database_helper.dart';
+import 'registrar_alimento.dart';
 
 class NutrientData {
   final double calorias;
@@ -18,7 +19,7 @@ class NutrientData {
   final double gordura;
   final double metaGordura;
 
-  NutrientData({
+  const NutrientData({
     required this.calorias,
     required this.metaCalorias,
     required this.proteina,
@@ -28,6 +29,17 @@ class NutrientData {
     required this.gordura,
     required this.metaGordura,
   });
+
+  factory NutrientData.vazia() => const NutrientData(
+        calorias: 0,
+        metaCalorias: 0,
+        proteina: 0,
+        metaProteina: 0,
+        carboidrato: 0,
+        metaCarboidrato: 0,
+        gordura: 0,
+        metaGordura: 0,
+      );
 }
 
 class DashboardScreen extends StatefulWidget {
@@ -38,54 +50,64 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  NutrientData? data;
+  NutrientData data = NutrientData.vazia();
+  late final DatabaseHelper db;
+  StreamSubscription<void>? _dbListener;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    loadDashboardData();
-    // Atualiza automaticamente quando o banco for alterado
-    DatabaseHelper.instance.updates.listen((_) => loadDashboardData());
+    db = DatabaseHelper.instance;
+    _carregarDados();
+
+    // Atualiza dashboard sempre que houver alterações no banco
+    _dbListener = db.updates.listen((_) => _carregarDados());
   }
 
-  Future<void> loadDashboardData() async {
-    final db = DatabaseHelper.instance;
-    final soma = await db.getSomaTotalAlimentos();
-    final meta = await db.getLastMeta();
+  @override
+  void dispose() {
+    _dbListener?.cancel();
+    super.dispose();
+  }
 
-    if (meta == null) {
+  Future<void> _carregarDados() async {
+    try {
+      final soma = await db.getSomaTotalAlimentos();
+
+      // 🔹 Obtém a meta atual (prioriza Bulking como padrão)
+      final metaDados = await db.getPeso("Bulking");
+
+      final metaCal = (metaDados?['meta_calorias'] ?? 3000.0) as double;
+      final metaProt = (metaDados?['meta_proteinas'] ?? 180.0) as double;
+      final metaCarb = (metaDados?['meta_carboidratos'] ?? 400.0) as double;
+      final metaFat = (metaDados?['meta_gorduras'] ?? 80.0) as double;
+
       setState(() {
         data = NutrientData(
-          calorias: soma['calorias'] ?? 0,
-          metaCalorias: 2000,
-          proteina: soma['proteinas'] ?? 0,
-          metaProteina: 150,
-          carboidrato: soma['carboidratos'] ?? 0,
-          metaCarboidrato: 250,
-          gordura: soma['gorduras'] ?? 0,
-          metaGordura: 70,
+          calorias: soma['calorias'] ?? 0.0,
+          metaCalorias: metaCal,
+          proteina: soma['proteinas'] ?? 0.0,
+          metaProteina: metaProt,
+          carboidrato: soma['carboidratos'] ?? 0.0,
+          metaCarboidrato: metaCarb,
+          gordura: soma['gorduras'] ?? 0.0,
+          metaGordura: metaFat,
         );
+        _isLoading = false;
       });
-      return;
+    } catch (e) {
+      debugPrint("Erro ao carregar dados do Dashboard: $e");
+      setState(() {
+        data = NutrientData.vazia();
+        _isLoading = false;
+      });
     }
-
-    setState(() {
-      data = NutrientData(
-        calorias: soma['calorias'] ?? 0,
-        metaCalorias: meta.calorias.toDouble(),
-        proteina: soma['proteinas'] ?? 0,
-        metaProteina: meta.proteinas.toDouble(),
-        carboidrato: soma['carboidratos'] ?? 0,
-        metaCarboidrato: meta.carboidratos.toDouble(),
-        gordura: soma['gorduras'] ?? 0,
-        metaGordura: meta.gorduras.toDouble(),
-      );
-    });
   }
 
   Widget _buildLinearCard(String title, double current, double goal,
       Color color, IconData icon, String unit) {
-    final progress = (current / goal).clamp(0.0, 1.0);
+    final progress = goal > 0 ? (current / goal).clamp(0.0, 1.0) : 0.0;
 
     return Card(
       elevation: 2,
@@ -124,7 +146,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 value: progress,
                 minHeight: 6,
                 color: color,
-                backgroundColor: Colors.white,
+                backgroundColor: Colors.grey.shade300,
               ),
             ),
           ],
@@ -167,98 +189,144 @@ class _DashboardScreenState extends State<DashboardScreen> {
         backgroundColor: Colors.red,
       ),
       drawer: const AppDrawer(),
-      body: d == null
+      body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.red))
           : RefreshIndicator(
-              onRefresh: loadDashboardData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
+              onRefresh: _carregarDados,
+              child: ListView(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Progresso de Calorias',
+                children: [
+                  const Text(
+                    'Progresso de Calorias',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  CircularPercentIndicator(
+                    radius: 70.0,
+                    lineWidth: 10.0,
+                    percent: d.metaCalorias > 0
+                        ? (d.calorias / d.metaCalorias).clamp(0.0, 1.0)
+                        : 0.0,
+                    center: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "${d.metaCalorias > 0 ? ((d.calorias / d.metaCalorias) * 100).toStringAsFixed(0) : 0}%",
+                          style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "${d.calorias.toStringAsFixed(0)} / ${d.metaCalorias.toStringAsFixed(0)} kcal",
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.black54),
+                        ),
+                      ],
+                    ),
+                    progressColor: Colors.red,
+                    backgroundColor: Colors.grey.shade200,
+                    circularStrokeCap: CircularStrokeCap.round,
+                    animation: true,
+                  ),
+                  const SizedBox(height: 20),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Macronutrientes',
                       style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 16),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildLinearCard("Proteínas", d.proteina, d.metaProteina,
+                      Colors.red, Icons.fitness_center, "g"),
+                  _buildLinearCard("Carboidratos", d.carboidrato,
+                      d.metaCarboidrato, Colors.red, Icons.local_dining, "g"),
+                  _buildLinearCard("Gorduras", d.gordura, d.metaGordura,
+                      Colors.red, Icons.water_drop, "g"),
+                  const SizedBox(height: 20),
+                  _smallButton(
+                    icon: Icons.add,
+                    label: 'Adicionar Refeição',
+                    textColor: Colors.black,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const RegistrarAlimentoPage()),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _smallButton(
+                    icon: Icons.monitor_weight,
+                    label: 'Peso e Metas',
+                    textColor: Colors.black,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const PesoMedidasPage()),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _smallButton(
+                    icon: Icons.fitness_center,
+                    label: 'Calcular IMC',
+                    textColor: Colors.black,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const CalculadoraIMCPage()),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _smallButton(
+                    icon: Icons.delete_forever,
+                    label: 'Resetar Progresso Nutricional',
+                    backgroundColor: Colors.white,
+                    textColor: Colors.red,
+                    onTap: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Confirmar Reset'),
+                          content: const Text(
+                              'Deseja realmente apagar todos os dados do aplicativo? Esta ação não pode ser desfeita.'),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(context, false),
+                              child: const Text('Cancelar'),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(context, true),
+                              child: const Text('Sim, apagar'),
+                            ),
+                          ],
+                        ),
+                      );
 
-                    CircularPercentIndicator(
-                      radius: 70.0,
-                      lineWidth: 10.0,
-                      percent: (d.calorias / d.metaCalorias).clamp(0.0, 1.0),
-                      center: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            "${((d.calorias / d.metaCalorias) * 100).toStringAsFixed(0)}%",
-                            style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "${d.calorias.toStringAsFixed(0)} / ${d.metaCalorias.toStringAsFixed(0)} kcal",
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.black54),
-                          ),
-                        ],
-                      ),
-                      progressColor: Colors.red,
-                      backgroundColor: Colors.grey.shade200,
-                      circularStrokeCap: CircularStrokeCap.round,
-                      animation: true,
-                    ),
-
-                    const SizedBox(height: 20),
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Macronutrientes',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    _buildLinearCard("Proteínas", d.proteina, d.metaProteina,
-                        Colors.red, Icons.fitness_center, "g"),
-                    _buildLinearCard("Carboidratos", d.carboidrato,
-                        d.metaCarboidrato, Colors.red, Icons.local_dining, "g"),
-                    _buildLinearCard("Gorduras", d.gordura, d.metaGordura,
-                        Colors.red, Icons.water_drop, "g"),
-
-                    const SizedBox(height: 20),
-                    _smallButton(
-                      icon: Icons.add,
-                      label: 'Adicionar Refeição',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => AdicionarRefeicaoPage()),
-                        );
-                      },
-                      backgroundColor: Colors.red,
-                      textColor: Colors.black,
-                    ),
-                    const SizedBox(height: 8),
-                    _smallButton(
-                      icon: Icons.monitor_weight,
-                      label: 'Calcular IMC',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => CalculadoraIMCPage()),
-                        );
-                      },
-                      backgroundColor: Colors.red,
-                      textColor: Colors.black,
-                    ),
-                  ],
-                ),
+                      if (confirm == true) {
+                        await DatabaseHelper.instance.resetDatabase();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Banco de dados resetado com sucesso!'),
+                            ),
+                          );
+                          _carregarDados();
+                        }
+                      }
+                    },
+                  ),
+                ],
               ),
             ),
     );
@@ -290,12 +358,15 @@ class AppDrawer extends StatelessWidget {
             onTap: () => Navigator.pop(context),
           ),
           ListTile(
-            leading: const Icon(Icons.food_bank),
-            title: const Text('Registro de Refeições'),
+            leading: const Icon(Icons.fastfood),
+            title: const Text('Registrar Refeição'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => AdicionarRefeicaoPage()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const RegistrarAlimentoPage()),
+              );
             },
           ),
           ListTile(
@@ -303,8 +374,11 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Peso e Medidas'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => PesoMedidasPage()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const PesoMedidasPage()),
+              );
             },
           ),
           ListTile(
@@ -312,8 +386,10 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Calcular IMC'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => CalculadoraIMCPage()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CalculadoraIMCPage()),
+              );
             },
           ),
           ListTile(
@@ -324,9 +400,8 @@ class AppDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      ConfiguracoesPage(onThemeChanged: (bool _) {}),
-                ),
+                    builder: (_) =>
+                        ConfiguracoesPage(onThemeChanged: (bool _) {})),
               );
             },
           ),
@@ -335,8 +410,8 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Suporte / Ajuda'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => AjudaSuporteScreen()));
+              Navigator.push(
+                  context, MaterialPageRoute(builder: (_) => AjudaSuporteScreen()));
             },
           ),
           ListTile(
@@ -344,8 +419,8 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Sobre o FitMacro'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => TelaSobre()));
+              Navigator.push(
+                  context, MaterialPageRoute(builder: (_) => SobrePage()));
             },
           ),
         ],
