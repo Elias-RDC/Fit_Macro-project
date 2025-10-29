@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../database_helper.dart';
+import 'database_helper.dart';
 
 class PesoMedidasPage extends StatefulWidget {
   const PesoMedidasPage({super.key});
@@ -9,184 +9,180 @@ class PesoMedidasPage extends StatefulWidget {
 }
 
 class _PesoMedidasPageState extends State<PesoMedidasPage> {
-  final alturaController = TextEditingController();
-  final pesoController = TextEditingController();
-  final caloriasController = TextEditingController();
-  final proteinasController = TextEditingController();
-  final gordurasController = TextEditingController();
-  final carboidratosController = TextEditingController();
+  final dbHelper = DatabaseHelper.instance;
 
   String metaSelecionada = "Bulking";
-  final dbHelper = DatabaseHelper.instance;
-  Meta? metaAtual;
+
+  final TextEditingController pesoController = TextEditingController();
+  final TextEditingController alturaController = TextEditingController();
+  final TextEditingController caloriasController = TextEditingController();
+  final TextEditingController proteinasController = TextEditingController();
+  final TextEditingController carboidratosController = TextEditingController();
+  final TextEditingController gordurasController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _carregarMeta();
+    _carregarDados();
   }
 
-  Future<void> _carregarMeta() async {
-    final meta = await dbHelper.getLastMeta();
-    if (meta != null) {
-      setState(() {
-        metaAtual = meta;
-        alturaController.text = meta.altura.toString();
-        pesoController.text = meta.peso.toString();
-        caloriasController.text = meta.calorias.toString();
-        proteinasController.text = meta.proteinas.toString();
-        gordurasController.text = meta.gorduras.toString();
-        carboidratosController.text = meta.carboidratos.toString();
-        metaSelecionada = meta.tipoMeta;
-      });
-    } else {
-      // valores padrão
-      alturaController.text = "1.80";
-      pesoController.text = "77.5";
-      caloriasController.text = "2000";
-      proteinasController.text = "150";
-      gordurasController.text = "50";
-      carboidratosController.text = "200";
-      metaSelecionada = "Bulking";
+  Future<void> _carregarDados() async {
+    try {
+      Map<String, dynamic>? dados = await dbHelper.getPeso(metaSelecionada);
+      if (dados != null && dados.isNotEmpty) {
+        setState(() {
+          pesoController.text = (dados['peso'] ?? 0).toString();
+          alturaController.text = (dados['altura'] ?? 0).toString();
+          caloriasController.text = (dados['meta_calorias'] ?? 0).toString();
+          proteinasController.text = (dados['meta_proteinas'] ?? 0).toString();
+          carboidratosController.text = (dados['meta_carboidratos'] ?? 0).toString();
+          gordurasController.text = (dados['meta_gorduras'] ?? 0).toString();
+        });
+      }
+    } catch (e) {
+      debugPrint('Erro ao carregar dados de peso e medidas: $e');
     }
   }
 
-  Future<void> _salvarMeta() async {
-    final novaMeta = Meta(
-      id: metaAtual?.id,
-      calorias: int.tryParse(caloriasController.text) ?? 0,
-      proteinas: int.tryParse(proteinasController.text) ?? 0,
-      carboidratos: int.tryParse(carboidratosController.text) ?? 0,
-      gorduras: int.tryParse(gordurasController.text) ?? 0,
-      altura: double.tryParse(alturaController.text) ?? 0.0,
-      peso: double.tryParse(pesoController.text) ?? 0.0,
-      tipoMeta: metaSelecionada,
-      data: DateTime.now().toIso8601String(),
-    );
+  Future<void> _salvarDados() async {
+    double peso = double.tryParse(pesoController.text) ?? 0;
+    double altura = double.tryParse(alturaController.text) ?? 0;
+    double metaCalorias = double.tryParse(caloriasController.text) ?? 0;
+    double metaProteinas = double.tryParse(proteinasController.text) ?? 0;
+    double metaCarboidratos = double.tryParse(carboidratosController.text) ?? 0;
+    double metaGorduras = double.tryParse(gordurasController.text) ?? 0;
 
-    await dbHelper.insertMeta(novaMeta);
+    Map<String, dynamic> dados = {
+      'meta': metaSelecionada,
+      'peso': peso,
+      'altura': altura,
+      'meta_calorias': metaCalorias,
+      'meta_proteinas': metaProteinas,
+      'meta_carboidratos': metaCarboidratos,
+      'meta_gorduras': metaGorduras,
+    };
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Informações salvas com sucesso!')),
-    );
-
-    _carregarMeta();
+    try {
+      await dbHelper.insertOrUpdatePesoMedidas(dados);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Dados salvos com sucesso!')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Erro ao salvar dados: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro ao salvar os dados.')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Peso e Medidas'),
+        title: const Text('Pesos e Metas'),
         backgroundColor: Colors.red,
         centerTitle: true,
       ),
-      body: SafeArea(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 8),
-              const Text(
-                'Veja suas Informações',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: _campoComUnidade(
-                        label: 'Altura', controller: alturaController, unidade: 'm'),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _campoComUnidade(
-                        label: 'Peso corporal', controller: pesoController, unidade: 'kg'),
-                  ),
+              DropdownButtonFormField<String>(
+                value: metaSelecionada,
+                decoration: const InputDecoration(
+                  labelText: 'Meta',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'Bulking', child: Text('Bulking')),
+                  DropdownMenuItem(value: 'Cutting', child: Text('Cutting')),
+                  DropdownMenuItem(value: 'Manutenção', child: Text('Manutenção')),
                 ],
+                onChanged: (valor) {
+                  setState(() {
+                    metaSelecionada = valor!;
+                  });
+                  _carregarDados();
+                },
               ),
-              const SizedBox(height: 24),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Meta',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: ['Bulking', 'Cutting', 'Manutenção'].map((meta) {
-                  return ChoiceChip(
-                    label: Text(meta),
-                    selected: metaSelecionada == meta,
-                    onSelected: (_) => setState(() => metaSelecionada = meta),
-                    selectedColor: Colors.red,
-                    labelStyle: TextStyle(
-                      color: metaSelecionada == meta ? Colors.white : Colors.black87,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 24),
-              _campoComUnidade(
-                  label: 'Meta diária de calorias',
-                  controller: caloriasController,
-                  unidade: 'kcal'),
-              const SizedBox(height: 16),
-              _campoComUnidade(
-                  label: 'Meta diária de proteínas',
-                  controller: proteinasController,
-                  unidade: 'g'),
-              const SizedBox(height: 16),
-              _campoComUnidade(
-                  label: 'Meta diária de gorduras',
-                  controller: gordurasController,
-                  unidade: 'g'),
-              const SizedBox(height: 16),
-              _campoComUnidade(
-                  label: 'Meta diária de carboidratos',
-                  controller: carboidratosController,
-                  unidade: 'g'),
-              const SizedBox(height: 30),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _salvarMeta,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text(
-                    'Atualizar informações',
-                    style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16),
-                  ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: pesoController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Peso (kg)',
+                  border: OutlineInputBorder(),
                 ),
               ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: alturaController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Altura (cm)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: caloriasController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Meta de calorias (kcal)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: proteinasController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Meta de proteínas (g)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: carboidratosController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Meta de carboidratos (g)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: gordurasController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Meta de gorduras (g)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 30),
+             SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                onPressed: _salvarDados,
+                icon: const Icon(Icons.save, color: Colors.black), // ícone branco
+                label: const Text('Salvar',
+                style: TextStyle(color: Colors.black), // texto branco
+              ),
+                style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                textStyle: const TextStyle(fontSize: 16),
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.black,
+    ),
+  ),
+),
+
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _campoComUnidade({
-    required String label,
-    required TextEditingController controller,
-    required String unidade,
-  }) {
-    return TextField(
-      controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      decoration: InputDecoration(
-        labelText: label,
-        suffixText: unidade,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
