@@ -1,32 +1,22 @@
+import 'package:fit_macro/login.dart';
 import 'package:flutter/material.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite/sqflite.dart';
-import 'login.dart';
 
-void main() async {
-  // Garante que tudo está inicializado antes de abrir o banco
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Inicializa o suporte ao SQLite para desktop (Linux/Windows/macOS)
-  sqfliteFfiInit();
-  databaseFactory = databaseFactoryFfi;
-
-  runApp(const FitMacroApp());
+void main() {
+  runApp(const MyApp());
 }
 
-class FitMacroApp extends StatelessWidget {
-  const FitMacroApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FitMacro',
       debugShowCheckedModeBanner: false,
+      title: 'Fit Macro',
       theme: ThemeData(
-        primarySwatch: Colors.red,
-        scaffoldBackgroundColor: Colors.white,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
       ),
-      home: const LoginPage(), // Tela inicial do app
+      home: const LoginPage(),
     );
   }
 }
