@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dashboard_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dashboard_screen.dart';
 
 class FitMacroApp extends StatelessWidget {
   const FitMacroApp({super.key});
@@ -106,8 +106,8 @@ class _LoginPageState extends State<LoginPage>
                           'Saúde e boa forma',
                           style: GoogleFonts.openSans(
                             color: Colors.red,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
@@ -142,10 +142,9 @@ class _LoginPageState extends State<LoginPage>
                           ),
                         ),
                         onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
+                          Navigator.of(context).pushReplacement(
                             MaterialPageRoute(
-                              builder: (_) => DashboardScreen(),
+                              builder: (context) => DashboardScreen(),
                             ),
                           );
                         },
@@ -168,7 +167,7 @@ class _LoginPageState extends State<LoginPage>
                       'Seu corpo, seus resultados.',
                       style: GoogleFonts.openSans(
                         color: Colors.white70,
-                        fontSize: 13,
+                        fontSize: 16,
                         fontStyle: FontStyle.italic,
                       ),
                     ),
