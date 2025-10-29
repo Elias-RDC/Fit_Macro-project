@@ -14,9 +14,9 @@ class _AjudaSuporteScreenState extends State<AjudaSuporteScreen> {
       icon: Icons.help_outline,
       body: const Text(
         "1. Como cadastrar meus alimentos?\n"
-        "→ Vá até a aba 'Refeições' e clique em 'Adicionar Alimento'.\n\n"
-        "2. Posso alterar minha meta calórica?\n"
-        "→ Sim, no menu de Peso e Medidas, clique em 'Atualizar Informações' e depois em 'Salvar'.",
+            "→ Vá até a aba 'Refeições' e clique em 'Adicionar Alimento'.\n\n"
+            "2. Posso alterar minha meta calórica?\n"
+            "→ Sim, no menu de Peso e Medidas, clique em 'Atualizar Informações' e depois em 'Salvar'.",
         style: TextStyle(fontSize: 14),
       ),
     ),
@@ -25,8 +25,8 @@ class _AjudaSuporteScreenState extends State<AjudaSuporteScreen> {
       icon: Icons.menu_book_outlined,
       body: const Text(
         "1. Acesse o menu principal.\n"
-        "2. Clique em 'Dashboard' para ver o resumo diário.\n"
-        "3. Utilize o gráfico para acompanhar o progresso semanal.",
+            "2. Clique em 'Dashboard' para ver o resumo diário.\n"
+            "3. Utilize o gráfico para acompanhar o progresso semanal.",
         style: TextStyle(fontSize: 14),
       ),
     ),
@@ -35,8 +35,8 @@ class _AjudaSuporteScreenState extends State<AjudaSuporteScreen> {
       icon: Icons.headset_mic_outlined,
       body: const Text(
         "Email 1: eliasrozal3030@gmail.com\n"
-        "Email 2: rodrigokamiguchi@gmail.com\n"
-        "Horário de atendimento: 8h às 18h.",
+            "Email 2: rodrigokamiguchi@gmail.com\n"
+            "Horário de atendimento: 8h às 18h.",
         style: TextStyle(fontSize: 14),
       ),
     ),
@@ -92,17 +92,13 @@ class _AjudaSuporteScreenState extends State<AjudaSuporteScreen> {
               ),
             ),
           ),
-
-          // Espaço extra entre o FAQ e a logo
-          const SizedBox(height: 24),
-
+          
           // Logo fixa no final
           Padding(
-            padding: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.symmetric(vertical:16),
             child: Image.asset(
               'assets/images/logo_sem_fundo.png',
               height: 100,
-              fit: BoxFit.contain,
             ),
           ),
         ],
