@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:intl/intl.dart';
-import 'database_helper.dart'; // Certifique-se de ajustar o caminho conforme a sua estrutura
+import 'database_helper.dart';
 
 class AlimentoItem {
   final String nome;
@@ -30,20 +29,20 @@ class AlimentoItem {
   }
 }
 
-class AdicionarRefeicaoPage extends StatefulWidget {
-  const AdicionarRefeicaoPage({super.key});
+class RegistrarAlimentoPage extends StatefulWidget {
+  const RegistrarAlimentoPage({super.key});
 
   @override
-  State<AdicionarRefeicaoPage> createState() => _AdicionarRefeicaoPageState();
+  State<RegistrarAlimentoPage> createState() => _RegistrarAlimentoPageState();
 }
 
-class _AdicionarRefeicaoPageState extends State<AdicionarRefeicaoPage> {
+class _RegistrarAlimentoPageState extends State<RegistrarAlimentoPage> {
   List<AlimentoItem> alimentos = [];
   AlimentoItem? alimentoSelecionado;
   final TextEditingController quantidadeController = TextEditingController();
+  final dbHelper = DatabaseHelper.instance;
 
   List<Map<String, dynamic>> refeicao = [];
-  final dbHelper = DatabaseHelper.instance;
 
   @override
   void initState() {
@@ -102,27 +101,34 @@ class _AdicionarRefeicaoPageState extends State<AdicionarRefeicaoPage> {
       return;
     }
 
-    final String dataHoje = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    try {
+      // Dispara todos os inserts em paralelo
+      List<Future> insercoes = refeicao.map((item) {
+        final dados = {
+          'nome': item['nome'],
+          'quantidade': item['quantidade'],
+          'total_kcal': item['kcal'],
+          'total_proteina': item['proteina'],
+          'total_carboidrato': item['carboidrato'],
+          'total_gordura': item['gordura'],
+        };
+        return dbHelper.insertRefeicao(dados);
+      }).toList();
 
-    for (var item in refeicao) {
-      final alimento = Alimento(
-        nome: item['nome'],
-        calorias: item['kcal'],
-        proteinas: item['proteina'],
-        carboidratos: item['carboidrato'],
-        gorduras: item['gordura'],
-        data: dataHoje,
+      await Future.wait(insercoes);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Refeição salva com sucesso!')),
       );
-      await dbHelper.insertAlimento(alimento);
+
+      setState(() {
+        refeicao.clear();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao salvar refeição: $e')),
+      );
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Refeição salva com sucesso!')),
-    );
-
-    setState(() {
-      refeicao.clear();
-    });
   }
 
   void removerAlimento(int index) {
@@ -212,8 +218,8 @@ class _AdicionarRefeicaoPageState extends State<AdicionarRefeicaoPage> {
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 5),
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
