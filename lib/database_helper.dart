@@ -2,248 +2,219 @@ import 'dart:async';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-/// Model Alimento
-class Alimento {
-  int? id;
-  String nome;
-  double calorias;
-  double proteinas;
-  double carboidratos;
-  double gorduras;
-  String data; // ISO string
-
-  Alimento({
-    this.id,
-    required this.nome,
-    required this.calorias,
-    required this.proteinas,
-    required this.carboidratos,
-    required this.gorduras,
-    required this.data,
-  });
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'nome': nome,
-      'calorias': calorias,
-      'proteinas': proteinas,
-      'carboidratos': carboidratos,
-      'gorduras': gorduras,
-      'data': data,
-    };
-  }
-
-  factory Alimento.fromMap(Map<String, dynamic> m) => Alimento(
-        id: m['id'] as int?,
-        nome: m['nome'] as String,
-        calorias: (m['calorias'] as num).toDouble(),
-        proteinas: (m['proteinas'] as num).toDouble(),
-        carboidratos: (m['carboidratos'] as num).toDouble(),
-        gorduras: (m['gorduras'] as num).toDouble(),
-        data: m['data'] as String,
-      );
-}
-
-/// Model Meta
-class Meta {
-  int? id;
-  int calorias;
-  int proteinas;
-  int carboidratos;
-  int gorduras;
-  double altura;
-  double peso;
-  String tipoMeta; // Bulking, Cutting, Manutenção
-  String data;
-
-  Meta({
-    this.id,
-    required this.calorias,
-    required this.proteinas,
-    required this.carboidratos,
-    required this.gorduras,
-    required this.altura,
-    required this.peso,
-    required this.tipoMeta,
-    required this.data,
-  });
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'calorias': calorias,
-      'proteinas': proteinas,
-      'carboidratos': carboidratos,
-      'gorduras': gorduras,
-      'altura': altura,
-      'peso': peso,
-      'tipo_meta': tipoMeta,
-      'data': data,
-    };
-  }
-
-  /// Map para inserir no banco sem enviar o id (resolve UNIQUE constraint)
-  Map<String, dynamic> toMapForInsert() {
-    return {
-      'calorias': calorias,
-      'proteinas': proteinas,
-      'carboidratos': carboidratos,
-      'gorduras': gorduras,
-      'altura': altura,
-      'peso': peso,
-      'tipo_meta': tipoMeta,
-      'data': data,
-    };
-  }
-
-  factory Meta.fromMap(Map<String, dynamic> m) => Meta(
-        id: m['id'] as int?,
-        calorias: m['calorias'] as int,
-        proteinas: m['proteinas'] as int,
-        carboidratos: m['carboidratos'] as int,
-        gorduras: m['gorduras'] as int,
-        altura: (m['altura'] as num).toDouble(),
-        peso: (m['peso'] as num).toDouble(),
-        tipoMeta: m['tipo_meta'] as String,
-        data: m['data'] as String,
-      );
-}
-
-/// Database helper singleton
 class DatabaseHelper {
-  DatabaseHelper._privateConstructor();
-  static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
+  // 🔒 Singleton
+  static final DatabaseHelper instance = DatabaseHelper._init();
+  static Database? _database;
 
-  static Database? _db;
+  DatabaseHelper._init();
 
-  // Stream controller to notify changes
-  final StreamController<void> _updatesController =
-      StreamController<void>.broadcast();
+  // 🔁 Controlador de atualizações (para o Dashboard escutar)
+  final StreamController<void> _updatesController = StreamController<void>.broadcast();
   Stream<void> get updates => _updatesController.stream;
 
   Future<Database> get database async {
-    if (_db != null) return _db!;
-    _db = await _initDatabase();
-    return _db!;
+    if (_database != null) return _database!;
+    _database = await _initDB('fit_macro.db');
+    return _database!;
   }
 
-  Future<Database> _initDatabase() async {
-    final databasesPath = await getDatabasesPath();
-    final path = join(databasesPath, 'fit_macro.db');
+  // 📂 Inicialização e criação do banco
+  Future<Database> _initDB(String filePath) async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, filePath);
 
     return await openDatabase(
       path,
-      version: 1,
-      onCreate: _onCreate,
+      version: 2,
+      onCreate: _createDB,
+      onUpgrade: _upgradeDB,
     );
   }
 
-  Future<void> _onCreate(Database db, int version) async {
+  // 🧩 Criação das tabelas
+  Future _createDB(Database db, int version) async {
     await db.execute('''
-    CREATE TABLE alimentos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nome TEXT,
-      calorias REAL,
-      proteinas REAL,
-      carboidratos REAL,
-      gorduras REAL,
-      data TEXT
-    )
+      CREATE TABLE refeicoes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome TEXT,
+        quantidade REAL,
+        total_kcal REAL,
+        total_proteina REAL,
+        total_carboidrato REAL,
+        total_gordura REAL
+      )
     ''');
 
     await db.execute('''
-    CREATE TABLE metas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      calorias INTEGER,
-      proteinas INTEGER,
-      carboidratos INTEGER,
-      gorduras INTEGER,
-      altura REAL,
-      peso REAL,
-      tipo_meta TEXT,
-      data TEXT
-    )
+      CREATE TABLE metas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        calorias REAL,
+        proteinas REAL,
+        carboidratos REAL,
+        gorduras REAL
+      )
     ''');
+
+    await db.execute('''
+      CREATE TABLE peso_medidas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        meta TEXT UNIQUE,
+        peso REAL,
+        altura REAL,
+        meta_calorias REAL,
+        meta_proteinas REAL,
+        meta_carboidratos REAL,
+        meta_gorduras REAL
+      )
+    ''');
+
+    // 🔹 Insere uma meta padrão na primeira inicialização
+    await db.insert('metas', {
+      'calorias': 3000.0,
+      'proteinas': 180.0,
+      'carboidratos': 400.0,
+      'gorduras': 80.0,
+    });
   }
 
-  // ---------- ALIMENTOS ----------
-  Future<int> insertAlimento(Alimento a) async {
-    final db = await database;
-    final id = await db.insert('alimentos', a.toMap());
-    _notifyUpdate();
-    return id;
+  // 🧱 Atualização de estrutura (caso já exista banco antigo)
+  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE peso_medidas ADD COLUMN meta_calorias REAL');
+      await db.execute('ALTER TABLE peso_medidas ADD COLUMN meta_proteinas REAL');
+      await db.execute('ALTER TABLE peso_medidas ADD COLUMN meta_carboidratos REAL');
+      await db.execute('ALTER TABLE peso_medidas ADD COLUMN meta_gorduras REAL');
+    }
   }
 
-  Future<List<Alimento>> getAllAlimentos() async {
+  // ======================== REFEIÇÕES =========================
+  Future<void> insertRefeicao(Map<String, dynamic> dados) async {
     final db = await database;
-    final res = await db.query('alimentos', orderBy: 'id DESC');
-    return res.map((m) => Alimento.fromMap(m)).toList();
+
+    await db.insert(
+      'refeicoes',
+      {
+        'nome': dados['nome'],
+        'quantidade': dados['quantidade'],
+        'total_kcal': dados['total_kcal'],
+        'total_proteina': dados['total_proteina'],
+        'total_carboidrato': dados['total_carboidrato'],
+        'total_gordura': dados['total_gordura'],
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    notifyUpdates();
   }
 
   Future<Map<String, double>> getSomaTotalAlimentos() async {
     final db = await database;
-    final res = await db.rawQuery('''
+    final result = await db.rawQuery('''
       SELECT 
-        SUM(calorias) as total_calorias,
-        SUM(proteinas) as total_proteinas,
-        SUM(carboidratos) as total_carboidratos,
-        SUM(gorduras) as total_gorduras
-      FROM alimentos
+        SUM(total_kcal) AS calorias,
+        SUM(total_proteina) AS proteinas,
+        SUM(total_carboidrato) AS carboidratos,
+        SUM(total_gordura) AS gorduras
+      FROM refeicoes
     ''');
-    final row = res.first;
-    double parse(dynamic v) {
-      if (v == null) return 0.0;
-      return (v as num).toDouble();
-    }
 
-    return {
-      'calorias': parse(row['total_calorias']),
-      'proteinas': parse(row['total_proteinas']),
-      'carboidratos': parse(row['total_carboidratos']),
-      'gorduras': parse(row['total_gorduras']),
-    };
+    if (result.isNotEmpty) {
+      final row = result.first;
+      return {
+        'calorias': (row['calorias'] ?? 0.0) as double,
+        'proteinas': (row['proteinas'] ?? 0.0) as double,
+        'carboidratos': (row['carboidratos'] ?? 0.0) as double,
+        'gorduras': (row['gorduras'] ?? 0.0) as double,
+      };
+    }
+    return {'calorias': 0, 'proteinas': 0, 'carboidratos': 0, 'gorduras': 0};
   }
 
-  // ---------- METAS ----------
-  Future<int> insertMeta(Meta m) async {
+  Future<Map<String, double>> getUltimaMeta() async {
     final db = await database;
-    // Usa ConflictAlgorithm.replace para evitar UNIQUE constraint failed
-    final id = await db.insert(
-      'metas',
-      m.toMapForInsert(),
+    final result = await db.query('metas', orderBy: 'id DESC', limit: 1);
+
+    if (result.isNotEmpty) {
+      final row = result.first;
+      return {
+        'calorias': (row['calorias'] ?? 0.0) as double,
+        'proteinas': (row['proteinas'] ?? 0.0) as double,
+        'carboidratos': (row['carboidratos'] ?? 0.0) as double,
+        'gorduras': (row['gorduras'] ?? 0.0) as double,
+      };
+    }
+    return {'calorias': 0, 'proteinas': 0, 'carboidratos': 0, 'gorduras': 0};
+  }
+
+  Future<void> updateMeta(Map<String, double> novaMeta) async {
+    final db = await database;
+    await db.insert('metas', novaMeta, conflictAlgorithm: ConflictAlgorithm.replace);
+    notifyUpdates();
+  }
+
+  // ===================== PESO E MEDIDAS =====================
+  Future<void> insertOrUpdatePesoMedidas(Map<String, dynamic> dados) async {
+    final db = await database;
+    await db.insert(
+      'peso_medidas',
+      dados,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-    _notifyUpdate();
-    return id;
+    notifyUpdates();
   }
 
-  Future<Meta?> getLastMeta() async {
+  Future<Map<String, dynamic>?> getPeso(String meta) async {
     final db = await database;
-    final res = await db.query('metas', orderBy: 'id DESC', limit: 1);
-    if (res.isEmpty) return null;
-    return Meta.fromMap(res.first);
+    final result = await db.query(
+      'peso_medidas',
+      where: 'meta = ?',
+      whereArgs: [meta],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      return result.first;
+    }
+    return null;
   }
 
-  Future<List<Meta>> getAllMetas() async {
-    final db = await database;
-    final res = await db.query('metas', orderBy: 'id DESC');
-    return res.map((m) => Meta.fromMap(m)).toList();
-  }
+  // ===================== RESET DE METAS =====================
+  Future<void> resetDatabase() async {
+  final db = await instance.database;
 
-  // ---------- UTIL ----------
-  void _notifyUpdate() {
-    try {
+  // 🔹 Zera apenas os valores de macronutrientes nas tabelas relevantes
+  await db.update('metas', {
+    'calorias': 0.0,
+    'proteinas': 0.0,
+    'carboidratos': 0.0,
+    'gorduras': 0.0,
+  });
+
+  await db.update('peso_medidas', {
+    'meta_calorias': 0.0,
+    'meta_proteinas': 0.0,
+    'meta_carboidratos': 0.0,
+    'meta_gorduras': 0.0,
+  });
+
+  // 🔹 Remove todas as refeições adicionadas
+  await db.delete('refeicoes');
+
+  notifyUpdates();
+  print('✅ Metas e refeições resetadas com sucesso!');
+}
+
+
+  // 🔔 Notifica listeners (Dashboard)
+  void notifyUpdates() {
+    if (!_updatesController.isClosed) {
       _updatesController.add(null);
-    } catch (e) {
-      // ignore if closed
     }
   }
 
-  Future<void> close() async {
-    await _updatesController.close();
-    final db = await database;
-    await db.close();
-    _db = null;
+  // 🧹 Fecha o controlador ao encerrar o app
+  void dispose() {
+    _updatesController.close();
   }
 }
