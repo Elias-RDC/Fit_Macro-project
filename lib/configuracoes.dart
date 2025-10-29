@@ -85,7 +85,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                 child: Text(
                   'FITMACRO',
                   style: TextStyle(
-                    color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold
+                      color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold
                   ),
                 ),
               ),
