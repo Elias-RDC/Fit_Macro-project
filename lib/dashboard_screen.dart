@@ -4,10 +4,10 @@ import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:fit_macro/sobre.dart';
 import 'pesos_e_medidas.dart';
 import 'imc.dart';
-import 'configuracoes.dart';
 import 'suporte.dart';
 import 'database_helper.dart';
 import 'registrar_alimento.dart';
+import 'dart:math';
 
 class NutrientData {
   final double calorias;
@@ -75,7 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final soma = await db.getSomaTotalAlimentos();
 
-      // 🔹 Obtém a meta atual (prioriza Bulking como padrão)
+      // Obtem a meta atual (prioriza Bulking como padrão)
       final metaDados = await db.getPeso("Bulking");
 
       final metaCal = (metaDados?['meta_calorias'] ?? 3000.0) as double;
@@ -210,18 +210,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     center: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          "${d.metaCalorias > 0 ? ((d.calorias / d.metaCalorias) * 100).toStringAsFixed(0) : 0}%",
-                          style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black),
-                        ),
+                        Text("${d.metaCalorias > 0 ? min((d.calorias / d.metaCalorias) * 100, 100).toStringAsFixed(0):0}%",
+                        style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
                         const SizedBox(height: 4),
                         Text(
                           "${d.calorias.toStringAsFixed(0)} / ${d.metaCalorias.toStringAsFixed(0)} kcal",
                           style: const TextStyle(
-                              fontSize: 12, color: Colors.black54),
+                              fontSize: 13, color: Colors.black, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -389,19 +389,6 @@ class AppDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const CalculadoraIMCPage()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Configurações do App'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) =>
-                        ConfiguracoesPage(onThemeChanged: (bool _) {})),
               );
             },
           ),
