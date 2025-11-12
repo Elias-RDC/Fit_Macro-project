@@ -90,7 +90,7 @@ class SobrePage extends StatelessWidget {
                 ),
                 SizedBox(height: 5),
                 Text(
-                  'Elias Rozal de Carvalho\nRodrigo Guilherme Braga Kamiguchi',
+                  'Elias Rozal de Carvalho - Curso de Ciência da Computação',
                   style: TextStyle(fontSize: 16, color: Colors.grey),
                   textAlign: TextAlign.center,
                 ),
