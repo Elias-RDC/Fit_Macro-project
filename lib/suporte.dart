@@ -14,9 +14,9 @@ class _AjudaSuporteScreenState extends State<AjudaSuporteScreen> {
       icon: Icons.help_outline,
       body: const Text(
         "1. Como cadastrar meus alimentos?\n"
-            "→ Vá até a aba 'Refeições' e clique em 'Adicionar Alimento'.\n\n"
+            "→ Vá até a aba 'Registrar Refeições' e clique em 'Adicionar Alimento', ao final, clique em 'Salvar Refeição'.\n\n"
             "2. Posso alterar minha meta calórica?\n"
-            "→ Sim, no menu de Peso e Medidas, clique em 'Atualizar Informações' e depois em 'Salvar'.",
+            "→ Sim, no menu de Peso e Metas, Atualize as informações desejadas nos campos e logo após Clique em 'Salvar'.",
         style: TextStyle(fontSize: 14),
       ),
     ),
@@ -25,8 +25,9 @@ class _AjudaSuporteScreenState extends State<AjudaSuporteScreen> {
       icon: Icons.menu_book_outlined,
       body: const Text(
         "1. Acesse o menu principal.\n"
-            "2. Clique em 'Dashboard' para ver o resumo diário.\n"
-            "3. Utilize o gráfico para acompanhar o progresso semanal.",
+            "2. O DashBoard na tela inicial mostra o resumo dos macronutrientes já consumidos, e o valor a ser atingido.\n"
+            "3. Acesse as principais funções em: '+ Adicionar Refeições', 'Peso e Metas' e 'Calcular IMC', presentes na tela inicial\n"
+            "4. Clique no botão 'Resetar Progresso Nutricional', para apagar os dados registrados até o final do dia, ou no momento o qual desejar",
         style: TextStyle(fontSize: 14),
       ),
     ),
@@ -34,8 +35,7 @@ class _AjudaSuporteScreenState extends State<AjudaSuporteScreen> {
       header: "Contato com Suporte",
       icon: Icons.headset_mic_outlined,
       body: const Text(
-        "Email 1: eliasrozal3030@gmail.com\n"
-            "Email 2: rodrigokamiguchi@gmail.com\n"
+        "Email para suporte: eliasrozal3030@gmail.com\n"
             "Horário de atendimento: 8h às 18h.",
         style: TextStyle(fontSize: 14),
       ),
