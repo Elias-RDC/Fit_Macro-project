@@ -119,12 +119,8 @@ class _LoginPageState extends State<LoginPage>
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        gradient: const LinearGradient(
-                          colors: [Colors.red, Colors.redAccent],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        borderRadius: BorderRadius.circular(18),
+                        
                         boxShadow: [
                           BoxShadow(
                             color: Colors.red.withOpacity(0.4),
