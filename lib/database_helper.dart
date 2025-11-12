@@ -183,7 +183,7 @@ class DatabaseHelper {
   Future<void> resetDatabase() async {
   final db = await instance.database;
 
-  // 🔹 Zera apenas os valores de macronutrientes nas tabelas relevantes
+  // Zera apenas os valores de macronutrientes nas tabelas relevantes
   await db.update('metas', {
     'calorias': 0.0,
     'proteinas': 0.0,
@@ -191,29 +191,22 @@ class DatabaseHelper {
     'gorduras': 0.0,
   });
 
-  await db.update('peso_medidas', {
-    'meta_calorias': 0.0,
-    'meta_proteinas': 0.0,
-    'meta_carboidratos': 0.0,
-    'meta_gorduras': 0.0,
-  });
-
-  // 🔹 Remove todas as refeições adicionadas
+  // Remove todas as refeições adicionadas
   await db.delete('refeicoes');
 
   notifyUpdates();
-  print('✅ Metas e refeições resetadas com sucesso!');
+  print('✅ Refeições resetadas com sucesso!');
 }
 
 
-  // 🔔 Notifica listeners (Dashboard)
+  // Notifica listeners (Dashboard)
   void notifyUpdates() {
     if (!_updatesController.isClosed) {
       _updatesController.add(null);
     }
   }
 
-  // 🧹 Fecha o controlador ao encerrar o app
+  // Fecha o controlador ao encerrar o app
   void dispose() {
     _updatesController.close();
   }
